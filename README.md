@@ -53,3 +53,28 @@ zenImport('<!DOCTYPE NETSCAPE-Bookmark-file-1>...')
 3. **Build Hierarchical Trees** - Converts the collected data into a nested bookmark structure ready for HTML conversion.
 4. **Export to HTML** - Creates a Netscape‑Bookmark‑file for every workspace with embedded workspace metadata and triggers a download.
 5. **Import from HTML** - Parses the workspace metadata from the file, resolves it against the current session, and restores essentials, pinned tabs, and nested folders into the correct workspace. Skips tabs that already exist.
+
+```mermaid
+flowchart TB
+  subgraph Export["export.js"]
+    direction TB
+    B[Discover Workspaces]
+    C[Collect Essentials,<br/>Pinned, Folders]
+    D[Build HTML<br/>with Metadata]
+    E[Download .html<br/>per Workspace]
+  end
+
+  subgraph Import["import.js"]
+    direction TB
+    F[Parse Metadata<br/>from File]
+    G[Resolve Workspace<br/>by UUID]
+    H[Restore Tabs<br/>& Folders]
+  end
+
+  A[Browser Tabs] --> B
+  B --> C --> D --> E
+  E --> F --> G --> H
+
+  style Export fill:#4a90d9,color:#fff
+  style Import fill:#27ae60,color:#fff
+```
