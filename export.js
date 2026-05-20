@@ -5,6 +5,15 @@
  */
 
 (function () {
+  const wsNameMap = new Map();
+  try {
+    gZenWorkspaces.getWorkspaces().forEach((w) =>
+      wsNameMap.set(w.uuid.replace(/[{}]/g, ""), w.name),
+    );
+  } catch (e) {
+    // workspace names unavailable, use UUIDs as fallback
+  }
+
   function getWorkspaceId(el) {
     const id = el.getAttribute("zen-workspace-id");
     return id ? id.replace(/[{}]/g, "") : "default";
@@ -33,6 +42,8 @@
   function ensureWorkspace(wsId) {
     if (!workspaces.has(wsId)) {
       workspaces.set(wsId, {
+        name: wsNameMap.get(wsId) || wsId,
+        uuid: wsId,
         essentials: [],
         pinnedOutside: [],
         folders: [],
@@ -115,8 +126,10 @@
   workspaces.forEach((wsData, wsId) => {
     let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
 <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
-<TITLE>Zen Browser Bookmarks – Workspace ${wsId}</TITLE>
-<H1>Zen Browser Bookmarks – Workspace ${wsId}</H1>
+<META HTTP-EQUIV="X-ZEN-WORKSPACE" CONTENT="${wsData.uuid}">
+<META HTTP-EQUIV="X-ZEN-WORKSPACE-NAME" CONTENT="${wsData.name}">
+<TITLE>Zen Browser Bookmarks – ${wsData.name}</TITLE>
+<H1>Zen Browser Bookmarks – ${wsData.name}</H1>
 <DL><p>
 `;
 

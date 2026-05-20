@@ -173,7 +173,17 @@ async function zenImport(source) {
     const doc = new DOMParser().parseFromString(xml, "text/html");
     const rootDL = doc.querySelector("DL");
     if (!rootDL) return null;
-    const result = { essentials: [], pinnedOutside: [], folders: [] };
+    const result = {
+      workspaceUuid:
+        doc.querySelector('META[http-equiv="X-ZEN-WORKSPACE"]')
+          ?.getAttribute("content") || "",
+      workspaceName:
+        doc.querySelector('META[http-equiv="X-ZEN-WORKSPACE-NAME"]')
+          ?.getAttribute("content") || "",
+      essentials: [],
+      pinnedOutside: [],
+      folders: [],
+    };
     parseSections(rootDL, result);
     return result;
   }
@@ -249,6 +259,15 @@ async function zenImport(source) {
     }
   }
 
+  function resolveWorkspace(uuid) {
+    if (!uuid) return null;
+    const normalized = uuid.replace(/[{}]/g, "");
+    const ws = gZenWorkspaces.getWorkspaces();
+    return (
+      ws.find((w) => w.uuid.replace(/[{}]/g, "") === normalized) || null
+    );
+  }
+
   // ------------------------------------------------------------------
   //  Entry point
   // ------------------------------------------------------------------
@@ -284,6 +303,7 @@ async function zenImport(source) {
         `${data.pinnedOutside.length} pinned, ` +
         `${countFolders(data.folders)} folder(s) (${total} tab(s))`,
     );
+    data._source = s.name;
     if (total > 0) parsedFiles.push(data);
   }
 
@@ -292,19 +312,28 @@ async function zenImport(source) {
     return;
   }
 
-  // 3.  Pick workspace (once for all files)
-  const target = pickWorkspace();
-  if (!target) {
-    console.log("Import cancelled.");
-    return;
-  }
-  console.log(`Target workspace: ${target.name} (${target.uuid})`);
-
-  // 4.  Execute
+  // 3.  Execute (workspace resolved per file)
   console.log("\nImporting\u2026");
   gZenFolders._sessionRestoring = true;
 
   for (const data of parsedFiles) {
+    let target = resolveWorkspace(data.workspaceUuid);
+    if (!target) {
+      if (data.workspaceUuid) {
+        console.log(
+          `  Workspace "${data.workspaceName}" (${data.workspaceUuid}) not found in current session.`,
+        );
+      }
+      console.log(`  Select target workspace for: ${data._source}`);
+      target = pickWorkspace();
+      if (!target) {
+        console.log("  Skipped.");
+        continue;
+      }
+    } else {
+      console.log(`  ${data._source} \u2192 ${target.name}`);
+    }
+
     if (data.essentials.length) {
       console.log("  Essentials\u2026");
       await importEssentials(data.essentials, target.uuid);
@@ -350,3 +379,5 @@ function countFolderTabs(folders) {
   }
   return n;
 }
+
+zenImport();
