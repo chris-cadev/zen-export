@@ -5,7 +5,7 @@
 This project provides scripts for converting pinned tabs in the **Zen Browser** to standard HTML bookmarks files and restoring them back. Export produces one file per workspace with embedded workspace metadata; import reads that metadata and restores each file into its original workspace.
 
 > [!WARNING]
-> Tested on Zen v1.16t
+> Tested on Zen 1.19.13b
 
 ## Usage
 
